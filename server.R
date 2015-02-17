@@ -1,3 +1,7 @@
+# This is the server-backend program of a Shiny web application.
+# Developing data products - course project
+# by LF
+
 library(shiny)
 
 # Plotting 
@@ -17,18 +21,13 @@ library(markdown)
 library(mapproj)
 library(maps)
 
-# Load helper functions
-#source("./helpers.R", local = TRUE)
-
-#' Aggregate dataset by state
-#' 
-#' @param dt data.table
-#' @param year_min integer
-#' @param year_max integer
-#' @param evtypes character vector
-#' @return data.table
-#'
 aggregate_by_state <- function(dt, year_min, year_max, evtypes) {
+  # Aggregate dataset by state
+  # @param dt data.table
+  # @param year_min integer
+  # @param year_max integer
+  # @param evtypes character vector
+  # @return data.table
   replace_na <- function(x) ifelse(is.na(x), 0, x)
   round_2 <- function(x) round(x, 2)
   
@@ -44,15 +43,13 @@ aggregate_by_state <- function(dt, year_min, year_max, evtypes) {
     mutate_each(funs(round_2), PROPDMG, CROPDMG)    
 }
 
-#' Aggregate dataset by year
-#' 
-#' @param dt data.table
-#' @param year_min integer
-#' @param year_max integer
-#' @param evtypes character vector
-#' @return data.table
-#'
 aggregate_by_year <- function(dt, year_min, year_max, evtypes) {
+  # Aggregate dataset by year
+  # @param dt data.table
+  # @param year_min integer
+  # @param year_max integer
+  # @param evtypes character vector
+  # @return data.table
   round_2 <- function(x) round(x, 2)
   
   # Filter
@@ -68,13 +65,12 @@ aggregate_by_year <- function(dt, year_min, year_max, evtypes) {
     )
 }
 
-#' Add Affected column based on category
-#'
-#' @param dt data.table
-#' @param category character
-#' @return data.table
-#'
 compute_affected <- function(dt, category) {
+  # Add Affected column based on category
+  #
+  # @param dt data.table
+  # @param category character
+  # @return data.table
   dt %>% mutate(Affected = {
     if(category == 'both') {
       INJURIES + FATALITIES
@@ -86,13 +82,11 @@ compute_affected <- function(dt, category) {
   })
 }
 
-#' Add Damages column based on category
-#' 
-#' @param dt data.table
-#' @param category character
-#' @return data.table
-#'
 compute_damages <- function(dt, category) {
+  #Add Damages column based on category 
+  # @param dt data.table
+  # @param category character
+  # @return data.table
   dt %>% mutate(Damages = {
     if(category == 'both') {
       PROPDMG + CROPDMG
@@ -104,21 +98,19 @@ compute_damages <- function(dt, category) {
   })
 }
 
-#' Prepare map of economic or population impact
-#' 
-#' @param dt data.table
-#' @param states_map data.frame returned from map_data("state")
-#' @param year_min integer
-#' @param year_max integer
-#' @param fill character name of the variable
-#' @param title character
-#' @param low character hex
-#' @param high character hex
-#' @return ggplot
-#' 
-plot_impact_by_state <- function (dt, states_map, year_min, year_max, fill, title, low = "#fff5eb", high = "#d94801") {
+plot_impact_by_state <- function (dataset, states_map, year_min, year_max, fill, title, low = "#fff5eb", high = "#d94801") {
+  # Prepare map of economic or population impact 
+  # @param dt data.table
+  # @param states_map data.frame returned from map_data("state")
+  # @param year_min integer
+  # @param year_max integer
+  # @param fill character name of the variable
+  # @param title character
+  # @param low character hex
+  # @param high character hex
+  # @return ggplot
   title <- sprintf(title, year_min, year_max)
-  p <- ggplot(dt, aes(map_id = STATE))
+  p <- ggplot(dataset, aes(map_id = STATE))
   p <- p + geom_map(aes_string(fill = fill), map = states_map, colour='black')
   p <- p + expand_limits(x = states_map$long, y = states_map$lat)
   p <- p + coord_map() + theme_bw()
@@ -126,18 +118,16 @@ plot_impact_by_state <- function (dt, states_map, year_min, year_max, fill, titl
   p + scale_fill_gradient(low = low, high = high)
 }
 
-#' Prepare plots of impact by year
-#'
-#' @param dt data.table
-#' @param dom
-#' @param yAxisLabel
-#' @param desc
-#' @return plot
-#' 
-plot_impact_by_year <- function(dt, dom, yAxisLabel, desc = FALSE) {
+plot_impact_by_year <- function(dataset, dom, yAxisLabel, desc = FALSE) {
+  # Prepare plots of impact by year
+  # @param dt data.table
+  # @param dom
+  # @param yAxisLabel
+  # @param desc
+  # @return plot
   impactPlot <- nPlot(
     value ~ Year, group = "variable",
-    data = melt(dt, id="Year") %>% arrange(Year, if (desc) { desc(variable) } else { variable }),
+    data = melt(dataset, id="Year") %>% arrange(Year, if (desc) { desc(variable) } else { variable }),
     type = "stackedAreaChart", dom = dom, width = 650
   )
   impactPlot$chart(margin = list(left = 100))
@@ -147,14 +137,12 @@ plot_impact_by_year <- function(dt, dom, yAxisLabel, desc = FALSE) {
   impactPlot
 }
 
-#' Prepare plot of number of events by year
-#'
-#' @param dt data.table
-#' @param dom
-#' @param yAxisLabel
-#' @return plot
-
 plot_events_by_year <- function(dt, dom = "eventsByYear", yAxisLabel = "Count") {
+  # Prepare plot of number of events by year
+  # @param dt data.table
+  # @param dom
+  # @param yAxisLabel
+  # @return plot
   eventsByYear <- nPlot(
     Count ~ Year,
     data = dt,
@@ -167,11 +155,10 @@ plot_events_by_year <- function(dt, dom = "eventsByYear", yAxisLabel = "Count") 
   eventsByYear
 }
 
-#' Prepare dataset for downloads
-#'
-#' @param dt data.table
-#' @return data.table
 prepare_downloads <- function(dt) {
+  # Prepare dataset for downloads
+  # @param dt data.table
+  # @return data.table
   dt %>% rename(
     State = STATE, Count = COUNT,
     Injuries = INJURIES, Fatalities = FATALITIES,
@@ -179,16 +166,13 @@ prepare_downloads <- function(dt) {
   ) %>% mutate(State=state.abb[match(State, tolower(state.name))])
 }
 
-
-
-# Load data
+# Loading and pre-formatting data
 states_map <- map_data("state")
-dt <- fread('./data/datausa.csv') %>% mutate(EVTYPE = tolower(EVTYPE))
-evtypes <- sort(unique(dt$EVTYPE))
+dataset <- fread('./data/datausa.csv') %>% mutate(EVTYPE = tolower(EVTYPE))
+evtypes <- sort(unique(dataset$EVTYPE))
 
 # Shiny server 
 shinyServer(function(input, output) {
-  
   # Define and initialize reactive values
   values <- reactiveValues()
   values$evtypes <- evtypes
@@ -211,30 +195,29 @@ shinyServer(function(input, output) {
   
   # Preapre datasets #
   # Prepare dataset for maps
-  dt.agg <- reactive({
-    aggregate_by_state(dt, input$range[1], input$range[2], input$evtypes)
+  dataset.agg <- reactive({
+    aggregate_by_state(dataset, input$range[1], input$range[2], input$evtypes)
   })
   
   # Prepare dataset for time series
-  dt.agg.year <- reactive({
-    aggregate_by_year(dt, input$range[1], input$range[2], input$evtypes)
+  dataset.agg.year <- reactive({
+    aggregate_by_year(dataset, input$range[1], input$range[2], input$evtypes)
   })
   
   # Prepare dataset for downloads
   dataTable <- reactive({
-    prepare_downloads(dt.agg())
+    prepare_downloads(dataset.agg())
   })
   
-  # Render Plots
-  
+  # Render Plots  
   # Population impact by state
   output$populationImpactByState <- renderPlot({
     print(plot_impact_by_state (
-      dt = compute_affected(dt.agg(), input$populationCategory),
+      dataset = compute_affected(dataset.agg(), input$populationCategory),
       states_map = states_map, 
       year_min = input$range[1],
       year_max = input$range[2],
-      title = "Population impact %d - %d (number of affected)",
+      title = "Population impact %d - %d (numbers of affected)",
       fill = "Affected"
     ))
   })
@@ -242,7 +225,7 @@ shinyServer(function(input, output) {
   # Economic impact by state
   output$economicImpactByState <- renderPlot({
     print(plot_impact_by_state(
-      dt = compute_damages(dt.agg(), input$economicCategory),
+      dataset = compute_damages(dataset.agg(), input$economicCategory),
       states_map = states_map, 
       year_min = input$range[1],
       year_max = input$range[2],
@@ -253,13 +236,13 @@ shinyServer(function(input, output) {
   
   # Events by year
   output$eventsByYear <- renderChart({
-    plot_events_by_year(dt.agg.year())
+    plot_events_by_year(dataset.agg.year())
   })
   
   # Population impact by year
   output$populationImpact <- renderChart({
     plot_impact_by_year(
-      dt = dt.agg.year() %>% select(Year, Injuries, Fatalities),
+      dataset = dataset.agg.year() %>% select(Year, Injuries, Fatalities),
       dom = "populationImpact",
       yAxisLabel = "Affected",
       desc = TRUE
@@ -269,7 +252,7 @@ shinyServer(function(input, output) {
   # Economic impact by state
   output$economicImpact <- renderChart({
     plot_impact_by_year(
-      dt = dt.agg.year() %>% select(Year, Crops, Property),
+      dataset = dataset.agg.year() %>% select(Year, Crops, Property),
       dom = "economicImpact",
       yAxisLabel = "Total damage (Million USD)"
     )

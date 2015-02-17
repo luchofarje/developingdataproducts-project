@@ -1,7 +1,6 @@
 # This is the user-interface definition of a Shiny web application.
-# You can find out more about building applications with Shiny here:
-# 
-# http://www.rstudio.com/shiny/
+# Developing data products - course project
+# by LF
 
 library(shiny)
 library(rCharts)
@@ -65,11 +64,12 @@ shinyUI(
                           
                           # Time series data
                           tabPanel(p(icon("line-chart"), "Graphs By Year"),
-                                   h3('Number of events by year', align = "center"),
+                                   p('These graphs parameters are affected by the year slider and event types', align="center"),
+                                   h3('Number of events', align = "center"),
                                    showOutput("eventsByYear", "nvd3"),
-                                   h3('Population impact by year', align = "center"),
+                                   h3('Population impact', align = "center"),
                                    showOutput("populationImpact", "nvd3"),
-                                   h3('Economic impact by year', align = "center"),
+                                   h3('Economic impact', align = "center"),
                                    showOutput("economicImpact", "nvd3")
                           ),
                           
